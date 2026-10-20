@@ -382,6 +382,201 @@ function NegLogPanel() {
 }
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
+// ── ATO Export panel ──────────────────────────────────────────────────────────
+function ExportPanel() {
+  const plan            = useStore(s => s.plan)
+  const activePlanLabel = useStore(s => s.activePlanLabel)
+  const scenario        = useStore(s => s.scenario)
+
+  const activeOption = plan?.options?.find(o => o.label === activePlanLabel) ?? plan?.options?.[0]
+  const assignments  = activeOption?.assignments ?? []
+  const zuluNow = () => new Date().toISOString().replace('T', ' ').slice(0, 19) + 'Z'
+
+  // ── CSV export ──
+  function exportCSV() {
+    const headers = ['Mission ID', 'Aircraft', 'Crew', 'Weapons', 'Role', 'Start (Z)', 'End (Z)', 'Risk', 'Confidence']
+    const rows = assignments.map(a => [
+      a.mission_id ?? '',
+      a.aircraft_id ?? '',
+      a.crew_id ?? '',
+      (a.weapons ?? []).join(' | '),
+      a.role ?? '',
+      a.start_zulu ?? '',
+      a.end_zulu ?? '',
+      a.risk_score != null ? (a.risk_score * 100).toFixed(0) + '%' : '',
+      a.confidence != null ? (a.confidence * 100).toFixed(0) + '%' : '',
+    ])
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `GARUDA_ATO_Plan${activePlanLabel}_${zuluNow().replace(/[: ]/g, '-')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── PDF export (print) ──
+  function exportPDF() {
+    const scenarioName = scenario?.name ?? 'EXERCISE IRON MONSOON'
+    const planId       = plan?.plan_id ?? '--'
+    const rob          = activeOption?.robustness_score?.toFixed(0) ?? '--'
+    const risk         = activeOption?.risk_score != null ? (activeOption.risk_score * 100).toFixed(0) : '--'
+    const covered      = activeOption?.missions_covered ?? '--'
+
+    const rows = assignments.map(a => `
+      <tr>
+        <td>${a.mission_id ?? ''}</td>
+        <td>${a.aircraft_id ?? ''}</td>
+        <td>${a.crew_id ?? ''}</td>
+        <td>${(a.weapons ?? []).join(', ')}</td>
+        <td>${a.role ?? ''}</td>
+        <td>${a.start_zulu ?? ''}</td>
+        <td>${a.end_zulu ?? ''}</td>
+        <td>${a.risk_score != null ? (a.risk_score * 100).toFixed(0) + '%' : ''}</td>
+      </tr>`).join('')
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<title>GARUDA ATO – Plan ${activePlanLabel}</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a1a; margin: 24px; }
+  h1   { font-size: 18px; margin: 0 0 4px; letter-spacing: 0.05em; }
+  .meta { font-size: 11px; color: #555; margin-bottom: 18px; }
+  .badge { display:inline-block; background:#FF9933; color:#fff; font-weight:700;
+           padding:2px 10px; border-radius:4px; font-size:11px; margin-left:8px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th { background:#0B1220; color:#fff; padding:7px 8px; font-size:10px;
+       text-transform:uppercase; letter-spacing:0.07em; text-align:left; }
+  td { padding:6px 8px; border-bottom:1px solid #e5e7eb; font-size:11px; }
+  tr:nth-child(even) td { background:#f7f8fa; }
+  .stats { display:flex; gap:24px; margin-bottom:16px; }
+  .stat  { background:#f7f8fa; border:1px solid #e5e7eb; border-radius:6px; padding:8px 16px; }
+  .stat-val { font-size:22px; font-weight:700; color:#0B1220; }
+  .stat-lbl { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:0.06em; }
+  .footer { margin-top:24px; font-size:10px; color:#aaa; border-top:1px solid #e5e7eb; padding-top:8px; }
+  @media print { body { margin: 12px; } }
+</style>
+</head>
+<body>
+<h1>GARUDA <span class="badge">PLAN ${activePlanLabel}</span></h1>
+<div class="meta">
+  <strong>${scenarioName}</strong> &nbsp;·&nbsp;
+  Plan ID: ${planId} &nbsp;·&nbsp;
+  Generated: ${zuluNow()} &nbsp;·&nbsp;
+  Classification: UNCLASSIFIED // EXERCISE
+</div>
+<div class="stats">
+  <div class="stat"><div class="stat-val">${covered}</div><div class="stat-lbl">Missions Covered</div></div>
+  <div class="stat"><div class="stat-val">${rob}%</div><div class="stat-lbl">Robustness (MC)</div></div>
+  <div class="stat"><div class="stat-val">${risk}%</div><div class="stat-lbl">Risk Score</div></div>
+</div>
+<table>
+  <thead><tr>
+    <th>Mission</th><th>Aircraft</th><th>Crew</th><th>Weapons</th>
+    <th>Role</th><th>Start (Z)</th><th>End (Z)</th><th>Risk</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="footer">GARUDA v1.0 &nbsp;·&nbsp; Air Operations Mission Planning Dashboard &nbsp;·&nbsp; AUTO-GENERATED ATO</div>
+</body></html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 400)
+  }
+
+  const btnStyle = (color) => ({
+    width: '100%', padding: '11px 0',
+    fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+    color, border: `1px solid ${color}`,
+    background: `${color}14`, cursor: 'pointer', fontFamily: 'inherit',
+    borderRadius: 8, transition: 'all 0.15s',
+  })
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: 12 }}>
+      {/* Header */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 10, color: C.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+          AIR TASKING ORDER EXPORT
+        </div>
+        <div style={{ fontSize: 9, color: C.dim, lineHeight: 1.5 }}>
+          Active plan: <span style={{ color: C.saffron, fontWeight: 600 }}>Plan {activePlanLabel}</span>
+          &nbsp;·&nbsp; {assignments.length} assignments
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {[
+          { label: 'MISSIONS', val: activeOption?.missions_covered ?? '--', color: C.green },
+          { label: 'ROB', val: `${activeOption?.robustness_score?.toFixed(0) ?? '--'}%`, color: C.cyan },
+          { label: 'RISK', val: `${activeOption?.risk_score != null ? (activeOption.risk_score*100).toFixed(0) : '--'}%`, color: C.red },
+        ].map(s => (
+          <div key={s.label} style={{
+            flex: 1, background: C.card, border: `1px solid ${C.border}`,
+            borderRadius: 6, padding: '6px 4px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 14, color: s.color, fontWeight: 700 }}>{s.val}</div>
+            <div style={{ fontSize: 8, color: C.muted, letterSpacing: '0.08em' }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Assignment preview */}
+      <div style={{ marginBottom: 14, maxHeight: 180, overflowY: 'auto',
+                    border: `1px solid ${C.border}`, borderRadius: 6 }}>
+        {assignments.length === 0 ? (
+          <div style={{ padding: '10px 12px', fontSize: 10, color: C.dim }}>No assignments in active plan</div>
+        ) : assignments.map((a, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '6px 10px', borderBottom: i < assignments.length - 1 ? `1px solid ${C.border}` : 'none',
+          }}>
+            <span style={{ fontSize: 10, color: C.saffron, fontWeight: 600, minWidth: 40 }}>{a.mission_id}</span>
+            <span style={{ fontSize: 10, color: C.text }}>{a.aircraft_id}</span>
+            <span style={{ fontSize: 9, color: C.muted }}>{a.crew_id}</span>
+            <span style={{ fontSize: 9, color: a.risk_score > 0.3 ? C.red : C.green }}>
+              {a.risk_score != null ? (a.risk_score * 100).toFixed(0) + '%' : '--'}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Export buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button
+          onClick={exportCSV}
+          style={btnStyle(C.green)}
+          onMouseEnter={e => e.currentTarget.style.background = `${C.green}28`}
+          onMouseLeave={e => e.currentTarget.style.background = `${C.green}14`}
+          disabled={assignments.length === 0}
+        >
+          ↓ Export CSV
+        </button>
+        <button
+          onClick={exportPDF}
+          style={btnStyle(C.saffron)}
+          onMouseEnter={e => e.currentTarget.style.background = `${C.saffron}28`}
+          onMouseLeave={e => e.currentTarget.style.background = `${C.saffron}14`}
+          disabled={assignments.length === 0}
+        >
+          ⎙ Export PDF / Print
+        </button>
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 9, color: C.dim, lineHeight: 1.5, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+        CSV includes all assignment fields.<br />
+        PDF opens a print-ready ATO document in a new tab.
+      </div>
+    </div>
+  )
+}
+
 const TABS = [
   { key: 'diff',       label: 'Diff'   },
   { key: 'robustness', label: 'Rob'    },
@@ -389,6 +584,7 @@ const TABS = [
   { key: 'pred',       label: 'Pred'   },
   { key: 'metrics',    label: 'Stats'  },
   { key: 'history',    label: 'Hist'   },
+  { key: 'export',     label: 'ATO'    },
 ]
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -533,6 +729,7 @@ export default function RightPanel() {
         {activeRightTab === 'pred'       && <PredictionsPanel />}
         {activeRightTab === 'metrics'    && <MetricsPanel />}
         {activeRightTab === 'history'    && <HistoryPanel />}
+        {activeRightTab === 'export'     && <ExportPanel />}
       </div>
     </div>
   )
