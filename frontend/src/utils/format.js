@@ -11,26 +11,28 @@ export function zuluClock() {
   return `${dd}${hh}${mm}Z ${mo} ${yr}`
 }
 
+// LOW=cyan/blue, MEDIUM=yellow, HIGH=orange/saffron, CRITICAL=red
 export const SEVERITY_COLOR = {
-  CRITICAL: '#d64545',
-  HIGH:     '#e8a317',
-  MEDIUM:   '#c9d1d9',
-  LOW:      '#57606a',
+  CRITICAL: '#EF4444',
+  HIGH:     '#FF9933',
+  MEDIUM:   '#FACC15',
+  LOW:      '#38BDF8',
 }
 
+// Mission/role color – distinct per type
 export const ROLE_COLOR = {
-  STRIKE: '#e8a317',
-  SEAD:   '#d64545',
-  CAS:    '#7eb8d4',
-  ISR:    '#8fb56e',
+  STRIKE: '#FF9933',   // saffron – primary
+  SEAD:   '#EF4444',   // red – suppression
+  CAS:    '#38BDF8',   // cyan – close air support
+  ISR:    '#22C55E',   // green – reconnaissance
 }
 
 export function missionColor(type) {
-  return ROLE_COLOR[type] || '#c9d1d9'
+  return ROLE_COLOR[type] || '#94A3B8'
 }
 
-export function pctBarStyle(pct, color='#e8a317') {
-  return { width:`${Math.min(100,pct)}%`, background: color, height:'3px', transition:'width .4s' }
+export function pctBarStyle(pct, color='#FF9933') {
+  return { width:`${Math.min(100,pct)}%`, background: color, height:'3px', transition:'width .4s', borderRadius: 2 }
 }
 
 export function hoursToLabel(isoStr) {

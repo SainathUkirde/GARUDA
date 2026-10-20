@@ -1,4 +1,4 @@
-// Leaflet tactical map – OSM base (states/cities/towns) + dark overlay, routes, threat circles, markers
+// GARUDA – Tactical map: Voyager basemap, colored markers, legend
 import { useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Polyline, Polygon,
          Marker, Popup, Circle } from 'react-leaflet'
@@ -7,101 +7,114 @@ import { useStore } from '../store/useStore'
 import { missionColor, ROLE_COLOR } from '../utils/format'
 import ContestedOverlay from './ContestedOverlay'
 
-// ── shared font ───────────────────────────────────────────────────────────────
-const FONT = "Arial, 'Helvetica Neue', Helvetica, sans-serif"
+// ── shared font / colors ──────────────────────────────────────────────────────
+const FONT = "'Inter', 'Segoe UI', Arial, sans-serif"
+const C = {
+  saffron: '#FF9933',
+  green:   '#22C55E',
+  red:     '#EF4444',
+  cyan:    '#38BDF8',
+  text:    '#E2E8F0',
+  muted:   '#64748B',
+  card:    '#111A2E',
+  border:  '#1E2D47',
+}
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
-// Aircraft: triangle + callsign label
+// Aircraft: colored triangle + callsign — blue for active, grey for inactive
 function acIcon(callsign, role, active = true) {
-  const color      = active ? (ROLE_COLOR[role] || '#c9d1d9') : '#3a4248'
-  const labelColor = active ? color : '#3a4248'
+  const color      = active ? (ROLE_COLOR[role] || C.text) : '#334155'
+  const labelColor = active ? '#E2E8F0' : '#475569'
   return L.divIcon({
     className: '',
     html: `
-      <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.95))">
+      <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.9))">
         <div style="
           width:0;height:0;
-          border-left:6px solid transparent;
-          border-right:6px solid transparent;
-          border-bottom:11px solid ${color};
-          opacity:${active ? 1 : 0.45};
+          border-left:7px solid transparent;
+          border-right:7px solid transparent;
+          border-bottom:13px solid ${color};
+          opacity:${active ? 1 : 0.4};
         "></div>
         <div style="
           color:${labelColor};
           font-family:${FONT};
           font-size:11px;font-weight:700;
           white-space:nowrap;
-          text-shadow:0 1px 4px #000,0 0 10px rgba(0,0,0,0.95),0 0 2px #000;
+          text-shadow:0 1px 4px #000,0 0 10px rgba(0,0,0,0.95);
           margin-top:2px;
-          letter-spacing:0.02em;
-          background:rgba(0,0,0,0.45);
-          padding:0 3px;
+          letter-spacing:0.03em;
+          background:rgba(11,18,32,0.7);
+          padding:1px 4px;
+          border-radius:3px;
         ">${callsign}</div>
       </div>`,
-    iconSize: [80, 34],
-    iconAnchor: [40, 6],
+    iconSize: [80, 36],
+    iconAnchor: [40, 7],
   })
 }
 
-// Airbase: square with cross-hair + ICAO label
+// Airbase: amber square + ICAO label
 function baseIcon(icao, name) {
   return L.divIcon({
     className: '',
     html: `
       <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none">
-        <div style="position:relative;width:12px;height:12px;background:#0f1316;border:2px solid #e8a317;">
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;background:#e8a317;border-radius:50%;"></div>
+        <div style="position:relative;width:14px;height:14px;background:#0B1220;border:2px solid ${C.saffron};border-radius:2px;">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:5px;height:5px;background:${C.saffron};border-radius:50%;"></div>
         </div>
         <div style="
-          color:#e8a317;
+          color:${C.saffron};
           font-family:${FONT};
           font-size:10px;font-weight:700;
           white-space:nowrap;
-          text-shadow:0 1px 4px #000,0 0 8px rgba(0,0,0,0.9);
+          text-shadow:0 1px 4px #000;
           margin-top:2px;
-          background:rgba(0,0,0,0.5);
-          padding:0 4px;
-          letter-spacing:0.04em;
+          background:rgba(11,18,32,0.75);
+          padding:1px 5px;
+          letter-spacing:0.05em;
           text-transform:uppercase;
+          border-radius:3px;
         ">${icao}</div>
       </div>`,
-    iconSize: [56, 32],
-    iconAnchor: [6, 6],
+    iconSize: [60, 34],
+    iconAnchor: [7, 7],
   })
 }
 
-// Target: diamond + label, colour by assigned state
+// Target: amber diamond + label
 function targetIcon(name, assigned) {
-  const color = assigned ? '#e8a317' : '#d64545'
+  const color = assigned ? C.saffron : C.red
   return L.divIcon({
     className: '',
     html: `
       <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none">
-        <div style="width:10px;height:10px;background:${color};transform:rotate(45deg);flex-shrink:0;"></div>
+        <div style="width:11px;height:11px;background:${color};transform:rotate(45deg);flex-shrink:0;border-radius:1px;box-shadow:0 0 6px ${color}88;"></div>
         <div style="
           color:${color};
           font-family:${FONT};
           font-size:10px;font-weight:700;
           white-space:nowrap;
-          text-shadow:0 1px 4px #000,0 0 8px rgba(0,0,0,0.9);
-          margin-top:4px;
-          background:rgba(0,0,0,0.5);
-          padding:0 4px;
-          letter-spacing:0.02em;
+          text-shadow:0 1px 4px #000;
+          margin-top:5px;
+          background:rgba(11,18,32,0.75);
+          padding:1px 5px;
+          letter-spacing:0.03em;
           text-transform:uppercase;
+          border-radius:3px;
         ">${name}</div>
       </div>`,
-    iconSize: [80, 32],
+    iconSize: [80, 34],
     iconAnchor: [5, 5],
   })
 }
 
-// Threat circle colours
+// Threat styles – always red for SAM
 function threatStyle(severity) {
-  if (severity === 'CRITICAL') return { stroke: '#d64545', glow: 'rgba(214,69,69,0.12)' }
-  if (severity === 'HIGH')     return { stroke: '#e8a317', glow: 'rgba(232,163,23,0.09)' }
-  return { stroke: '#7eb8d4', glow: 'rgba(126,184,212,0.07)' }
+  if (severity === 'CRITICAL') return { stroke: C.red,     glow: 'rgba(239,68,68,0.15)' }
+  if (severity === 'HIGH')     return { stroke: '#FF6B35', glow: 'rgba(255,107,53,0.12)' }
+  return                               { stroke: '#FB923C', glow: 'rgba(251,146,60,0.09)' }
 }
 
 const KM = 1000
@@ -155,40 +168,15 @@ export default function TacticalMap() {
         attributionControl={true}
       >
         {/*
-          LAYER 1 — Stadia Alidade Smooth Dark
-          Free, no key required for development/low traffic.
-          Shows India states, cities, roads, rivers, terrain labels.
-          Falls back to OSM standard if unavailable.
+          OpenStreetMap Standard – completely free, no API key required.
         */}
         <TileLayer
-          url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a>, &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-          maxZoom={20}
-          crossOrigin="anonymous"
-          errorTileUrl="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
         />
 
-        {/*
-          LAYER 2 — Stamen Toner Lines (political borders + labels only, transparent bg)
-          Adds crisp state borders and city names on top of the dark base.
-          Attribution inherited from base.
-        */}
-        <TileLayer
-          url="https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}{r}.png"
-          attribution=""
-          maxZoom={20}
-          opacity={0.35}
-          crossOrigin="anonymous"
-        />
-        <TileLayer
-          url="https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png"
-          attribution=""
-          maxZoom={20}
-          opacity={0.6}
-          crossOrigin="anonymous"
-        />
-
-        {/* ── SAM / threat rings ── */}
+        {/* ── SAM / threat rings – always red, pulsing dot center ── */}
         {threatZones.filter(t => t.active).map(t => {
           const s = threatStyle(t.severity)
           return (
@@ -199,10 +187,10 @@ export default function TacticalMap() {
               pathOptions={{
                 color:       s.stroke,
                 fillColor:   s.stroke,
-                fillOpacity: 0.08,
-                weight:      1.5,
-                dashArray:   '7 5',
-                opacity:     0.9,
+                fillOpacity: 0.10,
+                weight:      2,
+                dashArray:   '6 5',
+                opacity:     0.95,
               }}
             >
               <Popup>
@@ -247,7 +235,7 @@ export default function TacticalMap() {
           />
         )}
 
-        {/* ── Flight routes ── */}
+        {/* ── Flight routes – green dashed lines ── */}
         {routes.map(r => r.positions.length > 1 && (
           <Polyline
             key={r.key}
@@ -255,8 +243,8 @@ export default function TacticalMap() {
             pathOptions={{
               color:     r.color,
               weight:    2.5,
-              opacity:   0.92,
-              dashArray: r.ac?.status === 'AIRBORNE' ? undefined : '7 6',
+              opacity:   0.95,
+              dashArray: r.ac?.status === 'AIRBORNE' ? undefined : '8 5',
             }}
           >
             <Popup>
@@ -345,6 +333,38 @@ export default function TacticalMap() {
           </Marker>
         ))}
       </MapContainer>
+
+      {/* ── Map legend (bottom-left) ── */}
+      <div style={{
+        position: 'absolute', bottom: 30, left: 10, zIndex: 1000,
+        background: 'rgba(11,18,32,0.88)',
+        border: '1px solid #1E2D47',
+        borderRadius: 8,
+        padding: '8px 12px',
+        backdropFilter: 'blur(4px)',
+        fontSize: 10,
+        minWidth: 130,
+      }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 7 }}>
+          MAP LEGEND
+        </div>
+        {[
+          { icon: '▲', color: C.cyan,    label: 'Aircraft (assigned)' },
+          { icon: '▲', color: '#475569', label: 'Aircraft (unassigned)' },
+          { icon: '■', color: C.saffron, label: 'Airbase' },
+          { icon: '◆', color: C.saffron, label: 'Mission Target' },
+          { icon: '◎', color: C.red,     label: 'SAM Threat Zone' },
+          { icon: '─', color: '#FF9933', label: 'Strike Route' },
+          { icon: '─', color: '#EF4444', label: 'SEAD Route' },
+          { icon: '─', color: '#38BDF8', label: 'CAS Route' },
+          { icon: '─', color: '#22C55E', label: 'ISR Route' },
+        ].map(({ icon, color, label }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+            <span style={{ color, fontSize: 11, flexShrink: 0, width: 12, textAlign: 'center' }}>{icon}</span>
+            <span style={{ color: '#94A3B8', fontSize: 10 }}>{label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

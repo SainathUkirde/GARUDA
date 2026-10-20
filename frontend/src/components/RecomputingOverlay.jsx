@@ -31,14 +31,14 @@ export default function RecomputingOverlay() {
   return (
     <div
       className="absolute inset-0 z-40 flex flex-col items-center justify-center"
-      style={{ background: 'rgba(15,19,22,0.72)', pointerEvents: 'none' }}
+      style={{ background: 'rgba(11,18,32,0.82)', pointerEvents: 'none' }}
     >
       <div
         className="flex flex-col items-center gap-4 border px-10 py-7"
-        style={{ background: '#161b1f', borderColor: '#e8a317', minWidth: 260 }}
+        style={{ background: 'var(--card)', borderColor: 'var(--accent)', minWidth: 260 }}
       >
         {/* Title */}
-        <div style={{ fontSize: 10, color: '#e8a317', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 10, color: 'var(--accent)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
           RECOMPUTING PLAN
         </div>
 
@@ -48,7 +48,7 @@ export default function RecomputingOverlay() {
             <div
               key={i}
               style={{
-                width: 5, height: 5, background: '#e8a317',
+                width: 5, height: 5, background: 'var(--accent)',
                 animation: `replan-pulse 0.8s ease-in-out ${i * 0.2}s infinite`,
               }}
             />
@@ -56,16 +56,16 @@ export default function RecomputingOverlay() {
         </div>
 
         {/* Stage text */}
-        <div style={{ fontSize: 9, color: '#57606a', letterSpacing: '0.10em', minHeight: 14, textAlign: 'center' }}>
+        <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.10em', minHeight: 14, textAlign: 'center' }}>
           {STAGES[stage]}
         </div>
 
         {/* Progress bar */}
-        <div style={{ width: '100%', height: 2, background: '#2a3238' }}>
+        <div style={{ width: '100%', height: 2, background: 'var(--border)' }}>
           <div
             style={{
               height: '100%',
-              background: '#e8a317',
+              background: 'var(--accent)',
               width: `${((stage + 1) / STAGES.length) * 100}%`,
               transition: 'width 0.32s ease',
             }}

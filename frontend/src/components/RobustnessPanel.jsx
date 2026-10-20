@@ -33,7 +33,7 @@ function CauseTag({ cause }) {
   }
   return (
     <span style={{
-      fontSize: 8, color: '#57606a', background: '#1e252a',
+      fontSize: 8, color: 'var(--text-muted)', background: 'var(--bg-elevated)',
       padding: '1px 4px', marginRight: 3,
     }}>
       {labels[cause] || cause}
@@ -43,15 +43,15 @@ function CauseTag({ cause }) {
 
 function PlanRobustness({ option, active }) {
   const score = option.robustness_score ?? 0
-  const color = score >= 80 ? '#8fb56e' : score >= 60 ? '#e8a317' : '#d64545'
+  const color = score >= 80 ? 'var(--healthy)' : score >= 60 ? 'var(--warning)' : 'var(--critical)'
   const causes = option.top_failure_causes ?? []
 
   return (
     <div
       className="border-b px-2 py-2"
       style={{
-        borderColor: '#1a2228',
-        background: active ? 'rgba(232,163,23,0.04)' : 'transparent',
+        borderColor: 'var(--border-subtle)',
+        background: active ? 'rgba(255,153,51,0.04)' : 'transparent',
       }}
     >
       {/* Header row */}
@@ -59,25 +59,25 @@ function PlanRobustness({ option, active }) {
         <div className="flex items-center gap-2">
           <span style={{
             fontSize: 9,
-            color: active ? '#e8a317' : '#57606a',
+            color: active ? 'var(--accent)' : 'var(--text-muted)',
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
           }}>
             PLAN {option.label}{active ? ' ●' : ''}
           </span>
-          <span style={{ fontSize: 8, color: '#57606a' }}>
+          <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>
             {option.missions_covered} missions
           </span>
         </div>
         <div className="flex items-center gap-3">
           <div>
-            <div style={{ fontSize: 7, color: '#57606a', textTransform: 'uppercase' }}>RISK</div>
-            <div style={{ fontSize: 10, color: option.risk_score > 0.2 ? '#d64545' : '#8fb56e' }}>
+            <div style={{ fontSize: 7, color: 'var(--text-muted)', textTransform: 'uppercase' }}>RISK</div>
+            <div style={{ fontSize: 10, color: option.risk_score > 0.2 ? 'var(--critical)' : 'var(--healthy)' }}>
               {((option.risk_score ?? 0) * 100).toFixed(0)}%
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 7, color: '#57606a', textTransform: 'uppercase' }}>SURVIVAL</div>
+            <div style={{ fontSize: 7, color: 'var(--text-muted)', textTransform: 'uppercase' }}>SURVIVAL</div>
             <div style={{ fontSize: 14, color, fontWeight: 700, lineHeight: 1 }}>
               {score.toFixed(0)}%
             </div>
@@ -86,7 +86,7 @@ function PlanRobustness({ option, active }) {
       </div>
 
       {/* Survival bar */}
-      <div style={{ height: 3, background: '#2a3238', marginBottom: 2 }}>
+      <div style={{ height: 3, background: 'var(--border)', marginBottom: 2 }}>
         <div style={{ width: `${Math.min(100, score)}%`, background: color, height: '100%', transition: 'width .5s' }} />
       </div>
 
@@ -96,15 +96,15 @@ function PlanRobustness({ option, active }) {
       {/* Failure causes */}
       {causes.length > 0 && (
         <div style={{ marginTop: 4 }}>
-          <span style={{ fontSize: 7, color: '#57606a', textTransform: 'uppercase', marginRight: 4 }}>TOP CAUSES:</span>
+          <span style={{ fontSize: 7, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: 4 }}>TOP CAUSES:</span>
           {causes.map(c => <CauseTag key={c} cause={c} />)}
         </div>
       )}
 
       {/* Weakest mission */}
       {option.weakest_mission && option.weakest_mission !== 'N/A' && (
-        <div style={{ fontSize: 8, color: '#57606a', marginTop: 3 }}>
-          WEAKEST: <span style={{ color: '#e8a317' }}>{option.weakest_mission}</span>
+        <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 3 }}>
+          WEAKEST: <span style={{ color: 'var(--accent)' }}>{option.weakest_mission}</span>
         </div>
       )}
     </div>
@@ -126,12 +126,12 @@ export default function RobustnessPanel() {
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-2 py-1 border-b shrink-0"
-           style={{ borderColor: '#2a3238', background: '#0f1316' }}>
-        <span style={{ fontSize: 9, color: '#57606a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+           style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
+        <span style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
           PLAN ROBUSTNESS  (500 MC RUNS)
         </span>
         {bestRob && (
-          <span style={{ fontSize: 8, color: '#8fb56e' }}>
+          <span style={{ fontSize: 8, color: 'var(--healthy)' }}>
             BEST: PLAN {bestRob.label}
           </span>
         )}
@@ -139,7 +139,7 @@ export default function RobustnessPanel() {
 
       {recomputing && (
         <div className="replan-pulse px-2 py-1 shrink-0"
-             style={{ fontSize: 9, color: '#e8a317', borderBottom: '1px solid #1a2228' }}>
+             style={{ fontSize: 9, color: 'var(--accent)', borderBottom: '1px solid var(--border-subtle)' }}>
           RUNNING MONTE CARLO...
         </div>
       )}
@@ -149,18 +149,18 @@ export default function RobustnessPanel() {
           <PlanRobustness key={o.label} option={o} active={o.label === activePlanLabel} />
         ))}
         {options.length === 0 && (
-          <div style={{ fontSize: 10, color: '#57606a', padding: '10px 8px' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', padding: '10px 8px' }}>
             NO PLAN LOADED
           </div>
         )}
       </div>
 
-      <div className="shrink-0 p-2 border-t" style={{ borderColor: '#2a3238' }}>
+      <div className="shrink-0 p-2 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
           onClick={generatePlan}
           disabled={recomputing}
           className="w-full py-1.5 text-[9px] tracking-widest uppercase border"
-          style={{ color: '#e8a317', borderColor: '#e8a317', opacity: recomputing ? 0.5 : 1 }}
+          style={{ color: 'var(--accent)', borderColor: 'var(--accent)', opacity: recomputing ? 0.5 : 1 }}
         >
           {recomputing ? 'RECOMPUTING...' : 'REFRESH ROBUSTNESS'}
         </button>

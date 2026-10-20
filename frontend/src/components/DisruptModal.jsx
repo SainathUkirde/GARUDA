@@ -1,5 +1,6 @@
-// DISRUPT MODAL – compact disruption injection form
+// DISRUPT MODAL – rendered via portal so it escapes overflow:hidden parents
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useStore } from '../store/useStore'
 
 const TYPES = [
@@ -13,14 +14,21 @@ const TYPES = [
 const SEVS   = ['LOW','MEDIUM','HIGH','CRITICAL']
 const ASSETS = ['AC01','AC02','AC03','AC04','AC05','AC06','AC07','AC08','AC09','AC10','AC11','AC12']
 const CALLSIGNS = {
-  AC01:'VIPER 11',AC02:'VIPER 12',AC03:'VIPER 13',
+  AC01:'VIPER 11', AC02:'VIPER 12', AC03:'VIPER 13',
   AC04:'RAPTOR 21',AC05:'RAPTOR 22',AC06:'RAPTOR 23',
-  AC07:'HAWK 31',AC08:'HAWK 32',AC09:'HAWK 33',AC10:'HAWK 34',
-  AC11:'GHOST 41',AC12:'GHOST 42',
+  AC07:'HAWK 31',  AC08:'HAWK 32',  AC09:'HAWK 33',  AC10:'HAWK 34',
+  AC11:'GHOST 41', AC12:'GHOST 42',
+}
+
+const SEV_COLOR = {
+  LOW:      '#38BDF8',
+  MEDIUM:   '#FACC15',
+  HIGH:     '#FF9933',
+  CRITICAL: '#EF4444',
 }
 
 export default function DisruptModal() {
-  const injectDisruption   = useStore(s => s.injectDisruption)
+  const injectDisruption    = useStore(s => s.injectDisruption)
   const setShowDisruptModal = useStore(s => s.setShowDisruptModal)
 
   const [type,     setType]     = useState('AIRCRAFT_UNSERVICEABLE')
@@ -33,45 +41,91 @@ export default function DisruptModal() {
     injectDisruption({ type, target_id: targetId || null, severity, detail })
   }
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background:'rgba(0,0,0,0.7)' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(7,14,26,0.82)',
+        backdropFilter: 'blur(4px)',
+      }}
       onClick={e => e.target === e.currentTarget && setShowDisruptModal(false)}
     >
-      <div
-        className="flex flex-col border"
-        style={{ width:340, background:'#161b1f', borderColor:'#2a3238' }}
-      >
-        {/* Title */}
-        <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor:'#2a3238', background:'#0f1316' }}>
-          <span style={{ fontSize:11, color:'#e8a317', textTransform:'uppercase', letterSpacing:'0.12em' }}>
-            INJECT DISRUPTION
-          </span>
-          <button onClick={() => setShowDisruptModal(false)} style={{ color:'#57606a', fontSize:14 }}>✕</button>
+      <div style={{
+        width: 380,
+        background: '#111A2E',
+        border: '1px solid #2A4070',
+        borderRadius: 14,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+        overflow: 'hidden',
+      }}>
+        {/* Title bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px',
+          background: '#0B1220',
+          borderBottom: '1px solid #1E2D47',
+        }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              ⚡ Inject Disruption
+            </div>
+            <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>
+              Simulate an operational event and trigger re-plan
+            </div>
+          </div>
+          <button
+            onClick={() => setShowDisruptModal(false)}
+            style={{
+              background: 'transparent', border: '1px solid #1E2D47',
+              borderRadius: 6, color: '#64748B', fontSize: 16,
+              width: 28, height: 28, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#EF4444'; e.currentTarget.style.color = '#EF4444' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E2D47'; e.currentTarget.style.color = '#64748B' }}
+          >✕</button>
         </div>
 
-        <form onSubmit={submit} className="p-3 flex flex-col gap-3">
-          {/* Type */}
+        <form onSubmit={submit} style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Disruption Type */}
           <div>
-            <label style={{ fontSize:9, color:'#57606a', display:'block', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>TYPE</label>
+            <label style={{ fontSize: 10, fontWeight: 600, color: '#64748B', display: 'block', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+              Disruption Type
+            </label>
             <select
-              value={type} onChange={e => setType(e.target.value)}
-              className="w-full px-2 py-1 border text-[11px]"
-              style={{ background:'#0f1316', color:'#c9d1d9', borderColor:'#2a3238', outline:'none' }}
+              value={type}
+              onChange={e => setType(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 10px',
+                background: '#0B1220', color: '#E2E8F0',
+                border: '1px solid #1E2D47', borderRadius: 8,
+                fontSize: 12, outline: 'none', cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
 
-          {/* Target */}
+          {/* Target Asset */}
           {['AIRCRAFT_UNSERVICEABLE','CREW_UNAVAILABLE','PRIORITY_CHANGE'].includes(type) && (
             <div>
-              <label style={{ fontSize:9, color:'#57606a', display:'block', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>TARGET ASSET</label>
+              <label style={{ fontSize: 10, fontWeight: 600, color: '#64748B', display: 'block', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+                Target Aircraft
+              </label>
               <select
-                value={targetId} onChange={e => setTargetId(e.target.value)}
-                className="w-full px-2 py-1 border text-[11px]"
-                style={{ background:'#0f1316', color:'#c9d1d9', borderColor:'#2a3238', outline:'none' }}
+                value={targetId}
+                onChange={e => setTargetId(e.target.value)}
+                style={{
+                  width: '100%', padding: '8px 10px',
+                  background: '#0B1220', color: '#E2E8F0',
+                  border: '1px solid #1E2D47', borderRadius: 8,
+                  fontSize: 12, outline: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
               >
                 {ASSETS.map(id => <option key={id} value={id}>{CALLSIGNS[id]} ({id})</option>)}
               </select>
@@ -80,58 +134,105 @@ export default function DisruptModal() {
 
           {/* Severity */}
           <div>
-            <label style={{ fontSize:9, color:'#57606a', display:'block', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>SEVERITY</label>
-            <div className="flex gap-1">
-              {SEVS.map(s => (
-                <button
-                  type="button" key={s}
-                  onClick={() => setSeverity(s)}
-                  className="flex-1 py-1 text-[9px] border transition-colors"
-                  style={{
-                    color:       severity === s ? '#e8a317' : '#57606a',
-                    borderColor: severity === s ? '#e8a317' : '#2a3238',
-                    background:  severity === s ? 'rgba(232,163,23,0.08)' : 'transparent',
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+            <label style={{ fontSize: 10, fontWeight: 600, color: '#64748B', display: 'block', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+              Severity
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {SEVS.map(s => {
+                const active = severity === s
+                const color  = SEV_COLOR[s]
+                return (
+                  <button
+                    type="button"
+                    key={s}
+                    onClick={() => setSeverity(s)}
+                    style={{
+                      flex: 1, padding: '7px 0',
+                      fontSize: 10, fontWeight: 700,
+                      letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color:       active ? '#0B1220' : color,
+                      border:      `1px solid ${color}`,
+                      background:  active ? color : `${color}12`,
+                      borderRadius: 7,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = `${color}25` }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = `${color}12` }}
+                  >
+                    {s}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* Detail */}
           <div>
-            <label style={{ fontSize:9, color:'#57606a', display:'block', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>DETAIL</label>
+            <label style={{ fontSize: 10, fontWeight: 600, color: '#64748B', display: 'block', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+              Detail <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </label>
             <input
               type="text"
               value={detail}
               onChange={e => setDetail(e.target.value)}
-              placeholder="optional detail / coords"
-              className="w-full px-2 py-1 border text-[11px]"
-              style={{ background:'#0f1316', color:'#c9d1d9', borderColor:'#2a3238', outline:'none' }}
+              placeholder="e.g. hydraulic failure / coords 20.1N 78.3E"
+              style={{
+                width: '100%', padding: '8px 10px',
+                background: '#0B1220', color: '#E2E8F0',
+                border: '1px solid #1E2D47', borderRadius: 8,
+                fontSize: 12, outline: 'none',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={e => e.currentTarget.style.borderColor = '#FF9933'}
+              onBlur={e => e.currentTarget.style.borderColor = '#1E2D47'}
             />
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-1">
+          <div style={{ display: 'flex', gap: 10, paddingTop: 2 }}>
             <button
               type="button"
               onClick={() => setShowDisruptModal(false)}
-              className="flex-1 py-1.5 text-[10px] tracking-widest uppercase border"
-              style={{ color:'#57606a', borderColor:'#2a3238' }}
+              style={{
+                flex: 1, padding: '9px 0',
+                fontSize: 11, fontWeight: 600,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: '#64748B', border: '1px solid #1E2D47',
+                background: 'transparent', cursor: 'pointer',
+                borderRadius: 8, fontFamily: 'inherit',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.color = '#94A3B8' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E2D47'; e.currentTarget.style.color = '#64748B' }}
             >
-              CANCEL
+              Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-1.5 text-[10px] tracking-widest uppercase border"
-              style={{ color:'#e8a317', borderColor:'#e8a317', background:'rgba(232,163,23,0.08)' }}
+              style={{
+                flex: 1, padding: '9px 0',
+                fontSize: 12, fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: '#0B1220', border: '1px solid #FF9933',
+                background: '#FF9933', cursor: 'pointer',
+                borderRadius: 8, fontFamily: 'inherit',
+                transition: 'all 0.15s',
+                boxShadow: '0 2px 8px rgba(255,153,51,0.3)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#FFB347'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(255,153,51,0.45)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#FF9933'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(255,153,51,0.3)' }}
             >
-              INJECT
+              ⚡ INJECT
             </button>
           </div>
+
         </form>
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

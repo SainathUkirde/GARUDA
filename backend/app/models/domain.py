@@ -226,6 +226,7 @@ class NLResponse(BaseModel):
     explanation: str
     is_what_if: bool = True
     plan_diff: Optional[PlanDiff] = None
+    chat_answer: str = ""          # full conversational answer for the chat UI
 
 
 # ──────────────────────────── predictions ────────────────────────────────────

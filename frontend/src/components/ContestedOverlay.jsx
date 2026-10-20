@@ -3,13 +3,13 @@
 import { useStore } from '../store/useStore'
 
 const STATUS_COLOR = {
-  LIVE:     '#8fb56e',
-  DEGRADED: '#e8a317',
-  LOST:     '#d64545',
+  LIVE:     'var(--healthy)',
+  DEGRADED: 'var(--warning)',
+  LOST:     'var(--critical)',
 }
 
 function SourceBadge({ source }) {
-  const color = STATUS_COLOR[source.status] || '#57606a'
+  const color = STATUS_COLOR[source.status] || 'var(--text-muted)'
   const age   = source.age_minutes < 1
     ? 'LIVE'
     : source.age_minutes < 60
@@ -19,9 +19,9 @@ function SourceBadge({ source }) {
   return (
     <div
       className="flex flex-col items-center px-2 py-1 border"
-      style={{ borderColor: `${color}44`, background: `${color}08`, minWidth: 56 }}
+      style={{ borderColor: `color-mix(in srgb, ${color} 27%, transparent)`, background: `color-mix(in srgb, ${color} 5%, transparent)`, minWidth: 56 }}
     >
-      <div style={{ fontSize: 7, color: '#57606a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <div style={{ fontSize: 7, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {source.source.toUpperCase()}
       </div>
       <div style={{ fontSize: 9, color, fontWeight: 600 }}>
@@ -51,22 +51,22 @@ export default function ContestedOverlay() {
       <div
         className="flex items-center gap-3 px-3 py-1"
         style={{
-          background: 'rgba(214,69,69,0.15)',
-          borderBottom: '1px solid rgba(214,69,69,0.4)',
+          background: 'rgba(239,68,68,0.12)',
+          borderBottom: '1px solid rgba(239,68,68,0.35)',
           pointerEvents: 'auto',
         }}
       >
-        <span className="replan-pulse" style={{ fontSize: 9, color: '#d64545', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+        <span className="replan-pulse" style={{ fontSize: 9, color: 'var(--critical)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
           ● CONTESTED ENVIRONMENT ACTIVE
         </span>
         {lostCount > 0 && (
-          <span style={{ fontSize: 9, color: '#d64545' }}>{lostCount} SOURCE{lostCount > 1 ? 'S' : ''} LOST</span>
+          <span style={{ fontSize: 9, color: 'var(--critical)' }}>{lostCount} SOURCE{lostCount > 1 ? 'S' : ''} LOST</span>
         )}
         {degradedCount > 0 && (
-          <span style={{ fontSize: 9, color: '#e8a317' }}>{degradedCount} DEGRADED</span>
+          <span style={{ fontSize: 9, color: 'var(--warning)' }}>{degradedCount} DEGRADED</span>
         )}
         <div className="flex-1" />
-        <span style={{ fontSize: 8, color: '#57606a' }}>DECISIONS TAGGED LOW CONF WHERE AFFECTED</span>
+        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>DECISIONS TAGGED LOW CONF WHERE AFFECTED</span>
       </div>
 
       {/* Source badges */}
@@ -74,8 +74,8 @@ export default function ContestedOverlay() {
         <div
           className="flex gap-1 px-2 py-1"
           style={{
-            background: 'rgba(15,19,22,0.85)',
-            borderBottom: '1px solid #2a3238',
+            background: 'rgba(11,18,32,0.88)',
+            borderBottom: '1px solid var(--border)',
             pointerEvents: 'auto',
             flexWrap: 'nowrap',
             overflowX: 'auto',

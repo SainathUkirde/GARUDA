@@ -23,15 +23,15 @@ export default function PrioritySlider() {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '0 12px', height: 34,
-      background: '#0f1316', borderTop: '1px solid #2a3238',
+      background: 'var(--bg)', borderTop: '1px solid var(--border)',
       flexShrink: 0,
     }}>
       {/* Left label */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, minWidth: 48 }}>
-        <span style={{ fontSize: 7, color: '#57606a', letterSpacing: '0.16em', textTransform: 'uppercase', lineHeight: 1 }}>
+        <span style={{ fontSize: 7, color: 'var(--text-muted)', letterSpacing: '0.16em', textTransform: 'uppercase', lineHeight: 1 }}>
           RISK
         </span>
-        <span style={{ fontSize: 10, color: '#d64545', fontWeight: 600 }}>{rPct}%</span>
+        <span style={{ fontSize: 10, color: 'var(--critical)', fontWeight: 600 }}>{rPct}%</span>
       </div>
 
       {/* Slider */}
@@ -45,17 +45,18 @@ export default function PrioritySlider() {
 
       {/* Right label */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flexShrink: 0, minWidth: 56 }}>
-        <span style={{ fontSize: 7, color: '#57606a', letterSpacing: '0.16em', textTransform: 'uppercase', lineHeight: 1 }}>
+        <span style={{ fontSize: 7, color: 'var(--text-muted)', letterSpacing: '0.16em', textTransform: 'uppercase', lineHeight: 1 }}>
           PRIORITY
         </span>
-        <span style={{ fontSize: 10, color: '#8fb56e', fontWeight: 600 }}>{pPct}%</span>
+        <span style={{ fontSize: 10, color: 'var(--healthy)', fontWeight: 600 }}>{pPct}%</span>
       </div>
 
       {/* Recomputing tag */}
       {recomputing && (
         <span className="replan-pulse" style={{
-          fontSize: 8, color: '#e8a317', letterSpacing: '0.1em',
-          border: '1px solid #e8a31744', padding: '2px 6px',
+          fontSize: 8, color: 'var(--accent)', letterSpacing: '0.1em',
+          border: '1px solid color-mix(in srgb, var(--accent) 27%, transparent)',
+          padding: '2px 6px',
         }}>
           RECOMPUTING
         </span>

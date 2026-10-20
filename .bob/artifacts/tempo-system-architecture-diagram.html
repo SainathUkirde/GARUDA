@@ -1,0 +1,592 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TEMPO – System Architecture Diagram</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    background: #ffffff;
+    color: #1f2328;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 32px 24px 48px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #57606a;
+    margin-bottom: 32px;
+  }
+  .diagram {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── row helpers ── */
+  .row { display: flex; gap: 12px; margin-bottom: 12px; align-items: stretch; }
+  .row.center { justify-content: center; }
+
+  /* ── box base ── */
+  .box {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    background: #f7f8fa;
+    flex: 1;
+  }
+  .box-title {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .box-sub {
+    font-size: 11px;
+    color: #57606a;
+    margin-bottom: 8px;
+  }
+  ul.items {
+    list-style: none;
+    padding: 0;
+  }
+  ul.items li {
+    font-size: 11.5px;
+    padding: 2px 0 2px 12px;
+    position: relative;
+    color: #1f2328;
+  }
+  ul.items li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #57606a;
+  }
+
+  /* ── colour themes ── */
+  .blue   { border-color: #3b82d4; background: #eff6ff; }
+  .blue   .box-title { color: #1d4ed8; }
+  .green  { border-color: #16a34a; background: #f0fdf4; }
+  .green  .box-title { color: #15803d; }
+  .purple { border-color: #7c3aed; background: #f5f3ff; }
+  .purple .box-title { color: #6d28d9; }
+  .amber  { border-color: #d97706; background: #fffbeb; }
+  .amber  .box-title { color: #b45309; }
+  .red    { border-color: #dc2626; background: #fef2f2; }
+  .red    .box-title { color: #b91c1c; }
+  .teal   { border-color: #0d9488; background: #f0fdfa; }
+  .teal   .box-title { color: #0f766e; }
+  .slate  { border-color: #475569; background: #f1f5f9; }
+  .slate  .box-title { color: #334155; }
+
+  /* ── arrow rows ── */
+  .arrow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    margin: 2px 0 6px;
+    font-size: 11px;
+    color: #57606a;
+  }
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .arrow-label { font-size: 10px; color: #57606a; }
+  .arrow-line {
+    width: 2px;
+    height: 22px;
+    background: #cbd5e1;
+    position: relative;
+  }
+  .arrow-line::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: -4px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #94a3b8;
+  }
+  .arrow-h {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .arrow-h-line {
+    width: 40px;
+    height: 2px;
+    background: #cbd5e1;
+    position: relative;
+  }
+  .arrow-h-line::after {
+    content: "";
+    position: absolute;
+    right: -5px;
+    top: -4px;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid #94a3b8;
+  }
+
+  /* ── divider label ── */
+  .layer-label {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin: 8px 0 6px;
+    border-top: 1px dashed #e5e7eb;
+    padding-top: 8px;
+  }
+
+  /* ── tag pill ── */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin: 1px 2px 1px 0;
+    font-weight: 600;
+  }
+  .tag-blue   { background: #dbeafe; color: #1d4ed8; }
+  .tag-green  { background: #dcfce7; color: #15803d; }
+  .tag-purple { background: #ede9fe; color: #6d28d9; }
+  .tag-amber  { background: #fef3c7; color: #b45309; }
+  .tag-red    { background: #fee2e2; color: #b91c1c; }
+  .tag-slate  { background: #e2e8f0; color: #334155; }
+
+  /* ── engine box (centre highlight) ── */
+  .engine {
+    border: 2.5px solid #1d4ed8;
+    background: #eff6ff;
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .engine-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1d4ed8;
+    letter-spacing: 0.08em;
+  }
+  .engine-sub {
+    font-size: 11px;
+    color: #3b82f6;
+    margin-top: 2px;
+  }
+
+  /* grid inside services layer */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .svc-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    padding: 8px 10px;
+    background: #fff;
+  }
+  .svc-title {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #1f2328;
+  }
+  .svc-item {
+    font-size: 10.5px;
+    color: #57606a;
+    padding: 1px 0;
+  }
+
+  /* data grid */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  /* footer */
+  .made-with {
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 40px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* responsive */
+  @media (max-width: 680px) {
+    .row { flex-direction: column; }
+    .services-grid { grid-template-columns: 1fr 1fr; }
+    .data-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>TEMPO – SYSTEM ARCHITECTURE DIAGRAM</h1>
+<p class="subtitle">Air Operations Dynamic Retasking Console  |  Accurate to codebase</p>
+
+<div class="diagram">
+
+  
+  <div class="layer-label">Client Layer</div>
+  <div class="row">
+
+    
+    <div class="box blue" style="max-width:200px;flex:0 0 200px">
+      <div class="box-title">👤 User</div>
+      <div class="box-sub">Air Ops Commander / Planner</div>
+      <ul class="items">
+        <li>View tactical picture</li>
+        <li>Inject disruptions</li>
+        <li>Voice / typed NL commands</li>
+        <li>Accept / Reject plan diff</li>
+        <li>Toggle contested mode</li>
+      </ul>
+    </div>
+
+    
+    <div class="box blue">
+      <div class="box-title">🖥 Web UI — React SPA</div>
+      <div class="box-sub">React 18 · Vite 5 · Tailwind CSS · Vercel CDN</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+        <span class="tag tag-blue">React 18</span>
+        <span class="tag tag-blue">Vite 5</span>
+        <span class="tag tag-slate">Tailwind CSS</span>
+        <span class="tag tag-green">Leaflet + react-leaflet</span>
+        <span class="tag tag-purple">Zustand state</span>
+        <span class="tag tag-amber">Web Speech API</span>
+      </div>
+      <ul class="items">
+        <li><strong>TacticalMap</strong> — Leaflet map, SAM rings, routes, jam polygon</li>
+        <li><strong>GanttTimeline</strong> — per-aircraft mission bars</li>
+        <li><strong>TopStrip</strong> — resource bars, Zulu clock, status badges</li>
+        <li><strong>RightPanel</strong> — DIFF / ROB / NEG / PRED / STATS / HIST tabs</li>
+        <li><strong>LeftPanel</strong> — disruption feed + advisory cards</li>
+        <li><strong>NLCommandBar</strong> — voice + typed WHAT-IF / COMMIT</li>
+        <li><strong>NegotiationPanel</strong> — live agent bid/veto/award log</li>
+        <li><strong>RobustnessPanel</strong> — 20-bin MC histogram</li>
+        <li><strong>ContestedOverlay</strong> — per-source confidence badges</li>
+        <li><strong>DisruptModal</strong> — disruption injection form</li>
+        <li><em>Offline SIM mode</em> — full mock data, no backend needed</li>
+      </ul>
+    </div>
+
+  </div>
+
+  
+  <div class="arrow-row">
+    <div class="arrow">
+      <div class="arrow-label">HTTPS · JSON (VITE_API_URL)</div>
+      <div class="arrow-line"></div>
+    </div>
+    <div class="arrow">
+      <div class="arrow-label">cold-start poll /api/health</div>
+      <div class="arrow-line"></div>
+    </div>
+  </div>
+
+  
+  <div class="layer-label">Gateway / Transport</div>
+  <div class="row center">
+    <div class="box slate" style="max-width:680px">
+      <div class="box-title">🔒 Gateway</div>
+      <div class="box-sub">Vercel (frontend CDN rewrites) → Render (backend web service)</div>
+      <ul class="items" style="columns:2;gap:24px">
+        <li>HTTPS-only transport</li>
+        <li>CORS via <code>ALLOWED_ORIGINS</code> env var</li>
+        <li><code>VITE_API_URL</code> env var routes to Render</li>
+        <li>12 s fetch timeout; AbortController</li>
+        <li>Render cold-start polling (max 30 s)</li>
+        <li>"WAKING SERVER…" / "LINK LIVE" badges in UI</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <div class="arrow-row">
+    <div class="arrow">
+      <div class="arrow-label">/api/* REST JSON</div>
+      <div class="arrow-line"></div>
+    </div>
+  </div>
+
+  
+  <div class="layer-label">Application Server</div>
+  <div class="row">
+    <div class="box green">
+      <div class="box-title">⚙ FastAPI Application Server</div>
+      <div class="box-sub">Python 3.11 · FastAPI 0.111 · Uvicorn (ASGI) · Pydantic v2 · Render</div>
+
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <div class="svc-box">
+          <div class="svc-title">Read Endpoints</div>
+          <div class="svc-item">GET /api/health</div>
+          <div class="svc-item">GET /api/scenario</div>
+          <div class="svc-item">GET /api/predictions</div>
+          <div class="svc-item">GET /api/advisory</div>
+        </div>
+        <div class="svc-box">
+          <div class="svc-title">Write Endpoints</div>
+          <div class="svc-item">POST /api/plan</div>
+          <div class="svc-item">POST /api/disruption</div>
+          <div class="svc-item">POST /api/robustness</div>
+          <div class="svc-item">POST /api/nl</div>
+          <div class="svc-item">POST /api/negotiate</div>
+          <div class="svc-item">POST /api/contested</div>
+        </div>
+      </div>
+
+      <ul class="items">
+        <li>Scenario + fused-state manager (in-memory, seeded from JSON)</li>
+        <li>CORS middleware · python-dotenv config · structured logging</li>
+        <li>Pydantic v2 request/response validation on all endpoints</li>
+        <li>Lifespan hook loads scenario + ML model on startup</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <div class="arrow-row">
+    <div class="arrow">
+      <div class="arrow-label">optimise / predict / negotiate / robustness requests</div>
+      <div class="arrow-line"></div>
+    </div>
+  </div>
+
+  
+  <div class="layer-label">Backend Services</div>
+  <div class="row">
+    <div class="box purple">
+      <div class="box-title">🧠 TEMPO Decision Engine — Services</div>
+      <div class="services-grid">
+
+        <div class="svc-box">
+          <div class="svc-title">⚡ CP-SAT Optimiser</div>
+          <div class="svc-item">Google OR-Tools 9.10</div>
+          <div class="svc-item">3 plan options A / B / C</div>
+          <div class="svc-item">Priority ↔ risk weight</div>
+          <div class="svc-item">&lt; 1 s (12 AC / 10 CR / 8 MSN)</div>
+          <div class="svc-item">Greedy fallback (no OR-Tools)</div>
+          <div class="svc-item">One-line reason per assignment</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">🎲 Monte Carlo Robustness</div>
+          <div class="svc-item">NumPy · 500 runs per plan</div>
+          <div class="svc-item">Survival % per option</div>
+          <div class="svc-item">20-bin histogram</div>
+          <div class="svc-item">Top-3 failure causes</div>
+          <div class="svc-item">Weakest mission ID</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">🤖 Multi-Agent Negotiation</div>
+          <div class="svc-item">AircraftAgent — range/status</div>
+          <div class="svc-item">CrewAgent — duty hours</div>
+          <div class="svc-item">WeaponsAgent — compatibility</div>
+          <div class="svc-item">WeatherAgent — visibility/wind</div>
+          <div class="svc-item">CoordinatorAgent — resolves</div>
+          <div class="svc-item">BID → VETO → AWARD flow</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">📊 Predictions</div>
+          <div class="svc-item">scikit-learn GBM model</div>
+          <div class="svc-item">NASA C-MAPSS failure prob</div>
+          <div class="svc-item">RUL (remaining useful life)</div>
+          <div class="svc-item">LOW / MEDIUM / HIGH / CRITICAL</div>
+          <div class="svc-item">Open-Meteo weather impact</div>
+          <div class="svc-item">Threat approach probability</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">💬 NL / Voice Parser</div>
+          <div class="svc-item">Regex rule engine (primary)</div>
+          <div class="svc-item">OpenAI GPT-4o-mini (optional)</div>
+          <div class="svc-item">WHAT-IF vs COMMIT mode</div>
+          <div class="svc-item">6 intent types recognised</div>
+          <div class="svc-item">Structured DisruptionEvent out</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">⚠ Advisory Service</div>
+          <div class="svc-item">Fuses predictions + weather</div>
+          <div class="svc-item">Advisory cards w/ severity</div>
+          <div class="svc-item">HIGH/CRITICAL → backup plan</div>
+          <div class="svc-item">Pre-computed via CP-SAT</div>
+          <div class="svc-item">One-click load in UI</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="arrow-row">
+    <div class="arrow">
+      <div class="arrow-label">datasets · model artefacts · weather cache</div>
+      <div class="arrow-line"></div>
+    </div>
+  </div>
+
+  
+  <div class="layer-label">Data &amp; ML Pipeline</div>
+  <div class="row">
+    <div class="box amber">
+      <div class="box-title">🗄 Data Layer — /data</div>
+      <div class="data-grid">
+
+        <div class="svc-box">
+          <div class="svc-title">🌤 Weather Cache</div>
+          <div class="svc-item"><strong>Source:</strong> Open-Meteo API (live)</div>
+          <div class="svc-item">fetch_weather.py → data/cache/</div>
+          <div class="svc-item">5 locations: Pune, Lohegaon,</div>
+          <div class="svc-item">Nagpur, Hyderabad, RouteCenter</div>
+          <div class="svc-item">wind · cloud · visibility · precip</div>
+          <div class="svc-item">Fallback: synthetic generation</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">✈ C-MAPSS ML Model</div>
+          <div class="svc-item"><strong>Source:</strong> NASA C-MAPSS dataset</div>
+          <div class="svc-item">train_cmapss.py → data/processed/</div>
+          <div class="svc-item">GBM (scikit-learn) → joblib</div>
+          <div class="svc-item">cmapss_model.joblib (committed)</div>
+          <div class="svc-item">Fallback: synthetic turbofan data</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">📋 Seed Scenario</div>
+          <div class="svc-item">seed_scenario.json</div>
+          <div class="svc-item">12 aircraft (VIPER/RAPTOR/HAWK/GHOST)</div>
+          <div class="svc-item">10 crews · 8 missions</div>
+          <div class="svc-item">4 airbases (OurAirports — real coords)</div>
+          <div class="svc-item">4 SAM threat zones</div>
+        </div>
+
+        <div class="svc-box">
+          <div class="svc-title">🗺 Real Airbase Data</div>
+          <div class="svc-item"><strong>Source:</strong> OurAirports.com</div>
+          <div class="svc-item">VAPO Pune · VABB Lohegaon</div>
+          <div class="svc-item">VANP Nagpur · VOHY Hyderabad</div>
+          <div class="svc-item">Real coords · runways · elevation</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="layer-label">Key Runtime Flow — Disruption → Re-plan</div>
+  <div class="row center">
+    <div class="box teal" style="max-width:760px">
+      <div class="box-title">🔄 Disruption → Diff → Accept / Reject Loop</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:11.5px">
+        <span class="tag tag-red">Event injected</span>
+        <span style="color:#94a3b8">→</span>
+        <span class="tag tag-slate">scenario state updated</span>
+        <span style="color:#94a3b8">→</span>
+        <span class="tag tag-blue">CP-SAT re-optimise</span>
+        <span style="color:#94a3b8">→</span>
+        <span class="tag tag-purple">500-run Monte Carlo</span>
+        <span style="color:#94a3b8">→</span>
+        <span class="tag tag-amber">BEFORE → AFTER diff</span>
+        <span style="color:#94a3b8">→</span>
+        <span class="tag tag-green">Commander: ACCEPT / REJECT</span>
+      </div>
+      <ul class="items" style="margin-top:8px">
+        <li>Disruption types: AIRCRAFT_UNSERVICEABLE · CREW_UNAVAILABLE · WEATHER_CLOSING · NEW_THREAT · COMMS_JAM · PRIORITY_CHANGE</li>
+        <li>NL commands (voice or typed) map to the same DisruptionEvent type via NL parser</li>
+        <li>CONTESTED mode adds LOW CONF tags to assignments; per-source confidence &amp; data-age shown</li>
+        <li>Human-in-the-loop: nothing commits until ACCEPT pressed (keyboard shortcut A)</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <div class="layer-label">Deployment</div>
+  <div class="row">
+
+    <div class="box blue" style="flex:1">
+      <div class="box-title">🌐 Frontend — Vercel</div>
+      <ul class="items">
+        <li>Static SPA (Vite build → dist/)</li>
+        <li>vercel.json — SPA rewrite rules</li>
+        <li>Env: <code>VITE_API_URL</code></li>
+        <li>CDN-served, zero cold-start</li>
+        <li>Offline SIM if API_URL blank</li>
+      </ul>
+    </div>
+
+    <div class="box green" style="flex:1">
+      <div class="box-title">☁ Backend — Render</div>
+      <ul class="items">
+        <li>Python web service</li>
+        <li>render.yaml config</li>
+        <li>Build: <code>pip install -r requirements.txt</code></li>
+        <li>Start: <code>uvicorn app.main:app</code></li>
+        <li>Env: <code>ALLOWED_ORIGINS · SEED · LOG_LEVEL · OPENAI_API_KEY</code></li>
+        <li>Free tier: ~15–30 s cold-start</li>
+        <li>Health: GET /api/health</li>
+        <li>API docs: GET /api/docs</li>
+      </ul>
+    </div>
+
+    <div class="box amber" style="flex:1">
+      <div class="box-title">🧪 Tests</div>
+      <ul class="items">
+        <li>test_phase1.py — 43 tests</li>
+        <li>test_phase3.py — 39 tests</li>
+        <li>test_phase4.py — 140 tests</li>
+        <li>test_phase5.py — 81 tests</li>
+        <li><strong>Total: 303 tests · 0 failures</strong></li>
+        <li>Covers: plan, disruption, negotiation, robustness, NL, contested</li>
+      </ul>
+    </div>
+
+  </div>
+
+  
+  <div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px;background:#f7f8fa;margin-top:4px">
+    <div style="font-size:11px;font-weight:700;color:#57606a;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Legend</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#eff6ff;border:1.5px solid #3b82d4;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Frontend / User</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:2px;vertical-align:middle;margin-right:4px"></span>API Server</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#f5f3ff;border:1.5px solid #7c3aed;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Decision Engine</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#fffbeb;border:1.5px solid #d97706;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Data / ML</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#f0fdfa;border:1.5px solid #0d9488;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Runtime Flow</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#f1f5f9;border:1.5px solid #475569;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Gateway / Infra</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="made-with">Made with IBM Bob</div>
+</body>
+</html>

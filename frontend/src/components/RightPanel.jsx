@@ -1,40 +1,64 @@
-// RIGHT PANEL – Plan A/B/C switcher, robustness, tabbed content
+// GARUDA – Right panel: plan A/B/C, robustness, tabbed content
 import { useStore } from '../store/useStore'
 import NegotiationPanel from './NegotiationPanel'
 import RobustnessPanel  from './RobustnessPanel'
 import PredictionsPanel from './PredictionsPanel'
 
+const C = {
+  bg:      '#0B1220',
+  card:    '#111A2E',
+  border:  '#1E2D47',
+  saffron: '#FF9933',
+  green:   '#22C55E',
+  yellow:  '#FACC15',
+  red:     '#EF4444',
+  cyan:    '#38BDF8',
+  text:    '#E2E8F0',
+  muted:   '#64748B',
+  dim:     '#334155',
+}
+
 // ── Robustness mini-bar ───────────────────────────────────────────────────────
-function RobustnessBar({ label, score, histogram, active }) {
-  const color = (score ?? 0) >= 80 ? '#8fb56e' : (score ?? 0) >= 60 ? '#e8a317' : '#d64545'
+function RobustnessBar({ label, score, histogram, active, isBest }) {
+  const color = (score ?? 0) >= 80 ? C.green : (score ?? 0) >= 60 ? C.yellow : C.red
   const maxBin = histogram?.length ? Math.max(...histogram, 0.001) : 0.001
   return (
-    <div style={{ marginBottom: 10 }}>
-      {/* Label + score */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 9, color: active ? '#e8a317' : '#57606a', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          PLAN {label}{active ? ' ●' : ''}
-        </span>
-        <span style={{ fontSize: 13, color, fontWeight: 700 }}>
-          {score?.toFixed(0) ?? '--'}<span style={{ fontSize: 9, color: `${color}88` }}>%</span>
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: active ? C.saffron : C.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Plan {label}{active ? ' ●' : ''}
+          </span>
+          {isBest && (
+            <span style={{
+              fontSize: 8, fontWeight: 700, color: C.green,
+              background: 'rgba(34,197,94,0.12)', border: `1px solid rgba(34,197,94,0.3)`,
+              borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em',
+            }}>
+              ★ RECOMMENDED
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize: 14, color, fontWeight: 700 }}>
+          {score?.toFixed(0) ?? '--'}<span style={{ fontSize: 10, color: `${color}88` }}>%</span>
         </span>
       </div>
       {/* Histogram bins */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 16, marginBottom: 3 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 14, marginBottom: 4 }}>
         {(histogram ?? []).map((v, i) => (
           <div key={i} style={{
-            flex: 1, background: color, opacity: 0.55,
+            flex: 1, background: color, opacity: 0.5,
             height: `${Math.round((v / maxBin) * 100)}%`,
-            minHeight: 1, minWidth: 1,
+            minHeight: 1, minWidth: 1, borderRadius: 1,
           }} />
         ))}
       </div>
       {/* Fill bar */}
-      <div style={{ height: 3, background: '#1e252a', position: 'relative' }}>
+      <div style={{ height: 3, background: C.border, position: 'relative', borderRadius: 2 }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0,
           width: `${Math.min(100, score ?? 0)}%`,
-          background: color,
+          background: color, borderRadius: 2,
           transition: 'width 0.5s ease',
         }} />
       </div>
@@ -44,33 +68,34 @@ function RobustnessBar({ label, score, histogram, active }) {
 
 // ── Diff line ────────────────────────────────────────────────────────────────
 function DiffLine({ diff }) {
-  const confColor = diff.low_conf ? '#d64545'
-                  : (diff.confidence ?? 1) >= 0.9 ? '#8fb56e' : '#e8a317'
+  const confColor = diff.low_conf ? C.red
+                  : (diff.confidence ?? 1) >= 0.9 ? C.green : C.yellow
   return (
     <div
       className="diff-enter"
-      style={{ borderBottom: '1px solid #1a2228', padding: '8px 10px' }}
+      style={{ borderBottom: `1px solid ${C.border}`, padding: '9px 12px' }}
     >
-      {/* Mission ID + confidence */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 10, color: '#c9d1d9', fontWeight: 600, letterSpacing: '0.04em' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+        <span style={{ fontSize: 11, color: C.text, fontWeight: 600, letterSpacing: '0.04em' }}>
           {diff.mission_id}
         </span>
         <span style={{
-          fontSize: 8, color: confColor, border: `1px solid ${confColor}66`,
-          padding: '1px 6px', letterSpacing: '0.08em', background: `${confColor}0d`,
+          fontSize: 9, fontWeight: 700, color: confColor,
+          border: `1px solid ${confColor}44`,
+          padding: '1px 7px', letterSpacing: '0.08em', background: `${confColor}0d`,
+          borderRadius: 4,
         }}>
           {diff.low_conf ? 'LOW CONF' : `${((diff.confidence ?? 1) * 100).toFixed(0)}%`}
         </span>
       </div>
       {/* Before → After */}
-      <div style={{ fontSize: 10, marginBottom: 3, lineHeight: 1.4 }}>
-        <span style={{ color: '#d64545' }}>{diff.before}</span>
-        <span style={{ color: '#3a4248', margin: '0 6px' }}>→</span>
-        <span style={{ color: '#8fb56e' }}>{diff.after}</span>
+      <div style={{ fontSize: 11, marginBottom: 4, lineHeight: 1.45 }}>
+        <span style={{ color: C.red }}>{diff.before}</span>
+        <span style={{ color: C.muted, margin: '0 8px' }}>→</span>
+        <span style={{ color: C.green }}>{diff.after}</span>
       </div>
       {/* Reason */}
-      <div style={{ fontSize: 9, color: '#57606a', lineHeight: 1.4, borderLeft: '2px solid #2a3238', paddingLeft: 6 }}>
+      <div style={{ fontSize: 10, color: C.muted, lineHeight: 1.45, borderLeft: `2px solid ${C.border}`, paddingLeft: 8 }}>
         {diff.reason}
       </div>
     </div>
@@ -90,17 +115,25 @@ function DiffPanel() {
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '5px 10px 4px', background: '#0f1316', borderBottom: '1px solid #2a3238',
+        padding: '7px 12px 6px', background: C.bg, borderBottom: `1px solid ${C.border}`,
         flexShrink: 0,
       }}>
-        <span style={{
-          fontSize: 9, color: pendingDiff ? '#e8a317' : '#57606a',
-          letterSpacing: '0.14em', textTransform: 'uppercase',
-        }}>
-          {pendingDiff ? '● PENDING DIFF' : 'PLAN DIFF'}
-        </span>
+        <div>
+          <span style={{
+            fontSize: 10, fontWeight: 600,
+            color: pendingDiff ? C.saffron : C.muted,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+          }}>
+            {pendingDiff ? '● PENDING DIFF' : 'Plan Diff'}
+          </span>
+          <div style={{ fontSize: 9, color: C.dim }}>Before → After comparison</div>
+        </div>
         {activeDiff && (
-          <span style={{ fontSize: 9, color: '#57606a' }}>
+          <span style={{
+            fontSize: 10, color: C.muted,
+            background: C.card, border: `1px solid ${C.border}`,
+            borderRadius: 10, padding: '1px 8px',
+          }}>
             {activeDiff.diffs?.length ?? 0} changes
           </span>
         )}
@@ -109,8 +142,8 @@ function DiffPanel() {
       {/* Disruption summary */}
       {activeDiff?.disruption_summary && (
         <div style={{
-          padding: '6px 10px', fontSize: 9, color: '#57606a',
-          borderBottom: '1px solid #1a2228', background: '#0f1316', flexShrink: 0,
+          padding: '7px 12px', fontSize: 10, color: C.muted,
+          borderBottom: `1px solid ${C.border}`, background: C.bg, flexShrink: 0,
         }}>
           {activeDiff.disruption_summary}
         </div>
@@ -120,8 +153,8 @@ function DiffPanel() {
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {activeDiff?.diffs?.map((d, i) => <DiffLine key={i} diff={d} />)}
         {!activeDiff?.diffs?.length && (
-          <div style={{ fontSize: 10, color: '#3a4248', padding: '12px 10px', fontStyle: 'italic' }}>
-            NO PENDING CHANGES
+          <div style={{ fontSize: 11, color: C.dim, padding: '14px 12px', fontStyle: 'italic' }}>
+            No pending changes
           </div>
         )}
       </div>
@@ -129,40 +162,46 @@ function DiffPanel() {
       {/* Accept / Reject */}
       {pendingDiff && (
         <div style={{
-          flexShrink: 0, borderTop: '1px solid #2a3238',
-          display: 'flex', gap: 8, padding: 10,
+          flexShrink: 0, borderTop: `1px solid ${C.border}`,
+          display: 'flex', gap: 8, padding: 12, background: C.bg,
         }}>
+          {/* ACCEPT – solid green */}
           <button
             onClick={acceptDiff}
             style={{
-              flex: 1, padding: '8px 0',
-              fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: '#8fb56e', border: '1px solid #8fb56e',
-              background: 'rgba(143,181,110,0.06)', cursor: 'pointer',
-              fontFamily: 'inherit', transition: 'background 0.15s',
+              flex: 1, padding: '9px 0',
+              fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: '#0B1220', border: `1px solid ${C.green}`,
+              background: C.green, cursor: 'pointer',
+              fontFamily: 'inherit', transition: 'all 0.15s',
+              borderRadius: 8,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              boxShadow: '0 2px 8px rgba(34,197,94,0.25)',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(143,181,110,0.12)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(143,181,110,0.06)'}
+            onMouseEnter={e => { e.currentTarget.style.background = '#4ADE80'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(34,197,94,0.4)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = C.green; e.currentTarget.style.boxShadow = '0 2px 8px rgba(34,197,94,0.25)' }}
           >
             ✓ ACCEPT
-            <span style={{ fontSize: 9, color: '#8fb56e88', border: '1px solid #8fb56e44', padding: '0 3px' }}>A</span>
+            <span style={{ fontSize: 9, color: 'rgba(11,18,32,0.5)', background: 'rgba(11,18,32,0.15)', borderRadius: 3, padding: '0 4px' }}>A</span>
           </button>
+          {/* REJECT – solid red */}
           <button
             onClick={rejectDiff}
             style={{
-              flex: 1, padding: '8px 0',
-              fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: '#d64545', border: '1px solid #d64545',
-              background: 'rgba(214,69,69,0.06)', cursor: 'pointer',
-              fontFamily: 'inherit', transition: 'background 0.15s',
+              flex: 1, padding: '9px 0',
+              fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: '#0B1220', border: `1px solid ${C.red}`,
+              background: C.red, cursor: 'pointer',
+              fontFamily: 'inherit', transition: 'all 0.15s',
+              borderRadius: 8,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              boxShadow: '0 2px 8px rgba(239,68,68,0.25)',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(214,69,69,0.12)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(214,69,69,0.06)'}
+            onMouseEnter={e => { e.currentTarget.style.background = '#F87171'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(239,68,68,0.4)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = C.red; e.currentTarget.style.boxShadow = '0 2px 8px rgba(239,68,68,0.25)' }}
           >
             ✕ REJECT
-            <span style={{ fontSize: 9, color: '#d6454588', border: '1px solid #d6454544', padding: '0 3px' }}>R</span>
+            <span style={{ fontSize: 9, color: 'rgba(11,18,32,0.5)', background: 'rgba(11,18,32,0.15)', borderRadius: 3, padding: '0 4px' }}>R</span>
           </button>
         </div>
       )}
@@ -178,42 +217,45 @@ function MetricsPanel() {
   const history  = useStore(s => s.planHistory)
 
   const rows = [
-    { label: 'MANUAL PLAN TIME',  val: metrics.planningTimeManual,                         highlight: false },
-    { label: 'SYSTEM PLAN TIME',  val: metrics.planningTimeSystem,                         highlight: true  },
-    { label: 'MISSION COVERAGE',  val: `${metrics.missionsCovered}/${metrics.missionsTotal ?? 8}`, highlight: true  },
-    { label: 'UTILISATION',       val: metrics.utilisationAfter ?? metrics.utilisationBefore, highlight: false },
-    { label: 'REPLAN TIME',       val: metrics.replanTime,                                 highlight: true  },
-    { label: 'PLAN ID',           val: plan?.plan_id ?? '--',                              highlight: false },
+    { label: 'Manual Plan Time',  val: metrics.planningTimeManual,                         highlight: false },
+    { label: 'System Plan Time',  val: metrics.planningTimeSystem,                         highlight: true  },
+    { label: 'Mission Coverage',  val: `${metrics.missionsCovered}/${metrics.missionsTotal ?? 8}`, highlight: true  },
+    { label: 'Utilisation',       val: metrics.utilisationAfter ?? metrics.utilisationBefore, highlight: false },
+    { label: 'Replan Time',       val: metrics.replanTime,                                 highlight: true  },
+    { label: 'Plan ID',           val: plan?.plan_id ?? '--',                              highlight: false },
   ]
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '8px 0' }}>
+    <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '6px 0' }}>
       {rows.map(r => (
         <div key={r.label} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '6px 10px', borderBottom: '1px solid #1a2228',
+          padding: '7px 12px', borderBottom: `1px solid ${C.border}`,
         }}>
-          <span style={{ fontSize: 9, color: '#57606a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.06em' }}>
             {r.label}
           </span>
-          <span style={{ fontSize: 10, color: r.highlight ? '#8fb56e' : '#c9d1d9', fontWeight: r.highlight ? 600 : 400 }}>
+          <span style={{ fontSize: 11, color: r.highlight ? C.green : C.text, fontWeight: r.highlight ? 600 : 400 }}>
             {r.val || '—'}
           </span>
         </div>
       ))}
 
       {history.length > 0 && (
-        <div style={{ padding: 10 }}>
+        <div style={{ padding: 12 }}>
           <button
             onClick={undoPlan}
             style={{
-              width: '100%', padding: '7px 0',
-              fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: '#57606a', border: '1px solid #2a3238',
+              width: '100%', padding: '8px 0',
+              fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+              color: C.muted, border: `1px solid ${C.border}`,
               background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+              borderRadius: 8, transition: 'all 0.15s',
             }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.saffron; e.currentTarget.style.color = C.saffron }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted }}
           >
-            UNDO LAST ACCEPT ({history.length} in history)
+            Undo Last Accept ({history.length} in history)
           </button>
         </div>
       )}
@@ -227,8 +269,8 @@ function HistoryPanel() {
   const undoPlan = useStore(s => s.undoPlan)
 
   if (!history.length) return (
-    <div style={{ fontSize: 10, color: '#3a4248', padding: '12px 10px', fontStyle: 'italic' }}>
-      NO PLAN HISTORY YET
+    <div style={{ fontSize: 11, color: C.dim, padding: '14px 12px', fontStyle: 'italic' }}>
+      No plan history yet
     </div>
   )
 
@@ -236,25 +278,28 @@ function HistoryPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {history.map((snap, i) => (
-          <div key={i} style={{ borderBottom: '1px solid #1a2228', padding: '8px 10px' }}>
-            <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 2 }}>{snap.label}</div>
-            <div style={{ fontSize: 9, color: '#57606a' }}>
+          <div key={i} style={{ borderBottom: `1px solid ${C.border}`, padding: '9px 12px' }}>
+            <div style={{ fontSize: 11, color: C.text, marginBottom: 3, fontWeight: 500 }}>{snap.label}</div>
+            <div style={{ fontSize: 10, color: C.muted }}>
               {snap.plan?.options?.find(o => o.label === snap.plan.best_option)?.missions_covered ?? '--'} missions covered
             </div>
           </div>
         ))}
       </div>
-      <div style={{ padding: 10, flexShrink: 0 }}>
+      <div style={{ padding: 12, flexShrink: 0, background: C.bg }}>
         <button
           onClick={undoPlan}
           style={{
-            width: '100%', padding: '7px 0',
-            fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
-            color: '#e8a317', border: '1px solid #e8a317',
-            background: 'rgba(232,163,23,0.06)', cursor: 'pointer', fontFamily: 'inherit',
+            width: '100%', padding: '8px 0',
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+            color: C.saffron, border: `1px solid ${C.saffron}`,
+            background: 'rgba(255,153,51,0.08)', cursor: 'pointer', fontFamily: 'inherit',
+            borderRadius: 8, transition: 'all 0.15s',
           }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,153,51,0.14)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,153,51,0.08)'}
         >
-          RESTORE PREVIOUS PLAN
+          Restore Previous Plan
         </button>
       </div>
     </div>
@@ -262,7 +307,7 @@ function HistoryPanel() {
 }
 
 // ── Negotiation log panel ─────────────────────────────────────────────────────
-const ACTION_COLORS = { BID: '#8fb56e', VETO: '#d64545', AWARD: '#e8a317', RESOLVE: '#7eb8d4' }
+const ACTION_COLORS = { BID: C.green, VETO: C.red, AWARD: C.saffron, RESOLVE: C.cyan }
 
 function NegLogPanel() {
   const negLog         = useStore(s => s.negLog)
@@ -273,20 +318,26 @@ function NegLogPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '5px 10px 4px', background: '#0f1316', borderBottom: '1px solid #2a3238',
+        padding: '7px 12px 6px', background: C.bg, borderBottom: `1px solid ${C.border}`,
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: 9, color: '#57606a', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          NEGOTIATION LOG
-        </span>
+        <div>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Negotiation Log
+          </span>
+          <div style={{ fontSize: 9, color: C.dim }}>Agent bid/veto/award stream</div>
+        </div>
         <button
           onClick={runNegotiation}
           disabled={recomputing}
           style={{
-            fontSize: 9, padding: '2px 8px', letterSpacing: '0.1em', textTransform: 'uppercase',
-            color: '#e8a317', border: '1px solid #e8a317',
-            background: 'rgba(232,163,23,0.06)', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 10, fontWeight: 700, padding: '4px 12px', letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: '#0B1220', border: `1px solid ${C.saffron}`,
+            background: C.saffron, cursor: 'pointer', fontFamily: 'inherit',
+            borderRadius: 6, transition: 'all 0.15s',
           }}
+          onMouseEnter={e => e.currentTarget.style.background = '#FFB347'}
+          onMouseLeave={e => e.currentTarget.style.background = C.saffron}
         >
           {recomputing ? '...' : '▶ RUN'}
         </button>
@@ -294,34 +345,37 @@ function NegLogPanel() {
 
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {negLog.length === 0 && (
-          <div style={{ fontSize: 10, color: '#3a4248', padding: '12px 10px', fontStyle: 'italic' }}>
-            PRESS RUN TO START NEGOTIATION
+          <div style={{ fontSize: 11, color: C.dim, padding: '14px 12px', fontStyle: 'italic' }}>
+            Press RUN to start agent negotiation
           </div>
         )}
-        {negLog.map((entry, i) => (
-          <div
-            key={i}
-            className="log-enter"
-            style={{ borderBottom: '1px solid #1a2228', padding: '7px 10px' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-              <span style={{
-                fontSize: 8, color: ACTION_COLORS[entry.action] || '#57606a',
-                border: `1px solid ${ACTION_COLORS[entry.action] || '#2a3238'}44`,
-                padding: '1px 5px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                background: `${ACTION_COLORS[entry.action] || '#57606a'}0d`,
-              }}>
-                {entry.action}
-              </span>
-              <span style={{ fontSize: 9, color: '#c9d1d9', fontWeight: 600 }}>{entry.agent}</span>
-              <span style={{ fontSize: 9, color: '#57606a', marginLeft: 'auto' }}>{entry.mission_id}</span>
+        {negLog.map((entry, i) => {
+          const ac = ACTION_COLORS[entry.action] || C.muted
+          return (
+            <div
+              key={i}
+              className="log-enter"
+              style={{ borderBottom: `1px solid ${C.border}`, padding: '8px 12px' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: ac,
+                  border: `1px solid ${ac}44`,
+                  padding: '1px 6px', letterSpacing: '0.1em', textTransform: 'uppercase',
+                  background: `${ac}12`, borderRadius: 4,
+                }}>
+                  {entry.action}
+                </span>
+                <span style={{ fontSize: 10, color: C.text, fontWeight: 600 }}>{entry.agent}</span>
+                <span style={{ fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{entry.mission_id}</span>
+              </div>
+              <div style={{ fontSize: 10, color: C.text, lineHeight: 1.45 }}>{entry.reason}</div>
+              {entry.score > 0 && (
+                <div style={{ fontSize: 9, color: C.dim, marginTop: 2 }}>score: {entry.score.toFixed(2)}</div>
+              )}
             </div>
-            <div style={{ fontSize: 9, color: '#c9d1d9', lineHeight: 1.4 }}>{entry.reason}</div>
-            {entry.score > 0 && (
-              <div style={{ fontSize: 8, color: '#3a4248', marginTop: 2 }}>score: {entry.score.toFixed(2)}</div>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -329,12 +383,12 @@ function NegLogPanel() {
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 const TABS = [
-  { key: 'diff',       label: 'DIFF'  },
-  { key: 'robustness', label: 'ROB'   },
-  { key: 'neglog',     label: 'NEG'   },
-  { key: 'pred',       label: 'PRED'  },
-  { key: 'metrics',    label: 'STATS' },
-  { key: 'history',    label: 'HIST'  },
+  { key: 'diff',       label: 'Diff'   },
+  { key: 'robustness', label: 'Rob'    },
+  { key: 'neglog',     label: 'Neg'    },
+  { key: 'pred',       label: 'Pred'   },
+  { key: 'metrics',    label: 'Stats'  },
+  { key: 'history',    label: 'Hist'   },
 ]
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -346,53 +400,71 @@ export default function RightPanel() {
   const setActiveRightTab  = useStore(s => s.setActiveRightTab)
   const options            = plan?.options ?? []
 
+  // Find the recommended (lowest risk) option
+  const bestLabel = plan?.best_option
+
   return (
     <div style={{
-      width: 272,
+      width: 280,
       display: 'flex',
       flexDirection: 'column',
-      background: '#161b1f',
-      borderLeft: '1px solid #2a3238',
+      background: C.card,
+      borderLeft: `1px solid ${C.border}`,
       minHeight: 0,
       overflow: 'hidden',
       flexShrink: 0,
     }}>
 
-      {/* ── Plan A / B / C option selector ── */}
+      {/* ── Plan A / B / C cards ── */}
       <div style={{
-        display: 'flex',
-        background: '#0f1316',
-        borderBottom: '1px solid #2a3238',
+        background: C.bg,
+        borderBottom: `1px solid ${C.border}`,
         flexShrink: 0,
       }}>
         {options.length === 0 ? (
-          <div style={{ padding: '8px 12px', fontSize: 9, color: '#3a4248', letterSpacing: '0.12em' }}>
-            NO PLAN GENERATED
+          <div style={{ padding: '10px 14px', fontSize: 10, color: C.dim, letterSpacing: '0.1em' }}>
+            No plan generated
           </div>
         ) : (
-          options.map(o => (
-            <button
-              key={o.label}
-              onClick={() => setActivePlanLabel(o.label)}
-              style={{
-                flex: 1, padding: '7px 4px',
-                fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
-                color: activePlanLabel === o.label ? '#e8a317' : '#57606a',
-                borderBottom: activePlanLabel === o.label ? '2px solid #e8a317' : '2px solid transparent',
-                background: 'transparent',
-                cursor: 'pointer', fontFamily: 'inherit',
-                transition: 'color 0.15s',
-              }}
-            >
-              PLAN {o.label}
-            </button>
-          ))
+          <div style={{ display: 'flex', gap: 0 }}>
+            {options.map(o => {
+              const isActive = activePlanLabel === o.label
+              const isBest   = o.label === bestLabel
+              return (
+                <button
+                  key={o.label}
+                  onClick={() => setActivePlanLabel(o.label)}
+                  style={{
+                    flex: 1, padding: '8px 4px 6px',
+                    fontSize: 10, fontWeight: isActive ? 700 : 500,
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: isActive ? C.saffron : C.muted,
+                    borderBottom: isActive ? `2px solid ${C.saffron}` : `2px solid transparent`,
+                    borderRight: `1px solid ${C.border}`,
+                    background: isActive ? 'rgba(255,153,51,0.06)' : 'transparent',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'all 0.15s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = C.text }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = C.muted }}
+                >
+                  Plan {o.label}
+                  {isBest && (
+                    <span style={{ fontSize: 7, color: C.green, letterSpacing: '0.06em', fontWeight: 700 }}>
+                      ★ BEST
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         )}
       </div>
 
       {/* ── Robustness bars (always visible) ── */}
       {options.length > 0 && (
-        <div style={{ padding: '10px 10px 4px', borderBottom: '1px solid #2a3238', flexShrink: 0 }}>
+        <div style={{ padding: '12px 12px 6px', borderBottom: `1px solid ${C.border}`, flexShrink: 0, background: C.bg }}>
           {options.map(o => (
             <RobustnessBar
               key={o.label}
@@ -400,19 +472,23 @@ export default function RightPanel() {
               score={o.robustness_score}
               histogram={o.robustness_histogram}
               active={o.label === activePlanLabel}
+              isBest={o.label === bestLabel}
             />
           ))}
           {/* Risk score row */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 4, paddingTop: 6, borderTop: '1px solid #1a2228' }}>
+          <div style={{ display: 'flex', gap: 6, marginTop: 2, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
             {options.map(o => {
               const risk = (o.risk_score ?? 0) * 100
-              const c = risk > 30 ? '#d64545' : risk > 15 ? '#e8a317' : '#8fb56e'
+              const c = risk > 30 ? C.red : risk > 15 ? C.yellow : C.green
               return (
-                <div key={o.label} style={{ flex: 1 }}>
-                  <div style={{ fontSize: 8, color: '#57606a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                    P{o.label} RISK
+                <div key={o.label} style={{
+                  flex: 1, background: C.card, borderRadius: 6, padding: '5px 6px',
+                  border: `1px solid ${C.border}`,
+                }}>
+                  <div style={{ fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
+                    Plan {o.label} Risk
                   </div>
-                  <div style={{ fontSize: 11, color: c, fontWeight: 600 }}>{risk.toFixed(0)}%</div>
+                  <div style={{ fontSize: 13, color: c, fontWeight: 700 }}>{risk.toFixed(0)}%</div>
                 </div>
               )
             })}
@@ -423,8 +499,8 @@ export default function RightPanel() {
       {/* ── Content tabs ── */}
       <div style={{
         display: 'flex',
-        background: '#0f1316',
-        borderBottom: '1px solid #2a3238',
+        background: C.bg,
+        borderBottom: `1px solid ${C.border}`,
         flexShrink: 0,
       }}>
         {TABS.map(t => (
@@ -432,14 +508,17 @@ export default function RightPanel() {
             key={t.key}
             onClick={() => setActiveRightTab(t.key)}
             style={{
-              flex: 1, padding: '5px 2px',
-              fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: activeRightTab === t.key ? '#e8a317' : '#57606a',
-              borderBottom: activeRightTab === t.key ? '2px solid #e8a317' : '2px solid transparent',
+              flex: 1, padding: '6px 2px',
+              fontSize: 9, fontWeight: activeRightTab === t.key ? 700 : 500,
+              letterSpacing: '0.06em',
+              color: activeRightTab === t.key ? C.saffron : C.muted,
+              borderBottom: activeRightTab === t.key ? `2px solid ${C.saffron}` : '2px solid transparent',
               background: 'transparent',
               cursor: 'pointer', fontFamily: 'inherit',
               transition: 'color 0.15s',
             }}
+            onMouseEnter={e => { if (activeRightTab !== t.key) e.currentTarget.style.color = C.text }}
+            onMouseLeave={e => { if (activeRightTab !== t.key) e.currentTarget.style.color = C.muted }}
           >
             {t.label}
           </button>

@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/useStore'
 
 const ACTION_COLOR = {
-  BID:     '#8fb56e',
-  VETO:    '#d64545',
-  AWARD:   '#e8a317',
-  RESOLVE: '#7eb8d4',
+  BID:     'var(--healthy)',
+  VETO:    'var(--critical)',
+  AWARD:   'var(--accent)',
+  RESOLVE: 'var(--info)',
 }
 
 const AGENT_SHORT = {
@@ -19,7 +19,7 @@ const AGENT_SHORT = {
 }
 
 function LogEntry({ entry, index, visible }) {
-  const color = ACTION_COLOR[entry.action] || '#57606a'
+  const color = ACTION_COLOR[entry.action] || 'var(--text-muted)'
   const agent = AGENT_SHORT[entry.agent] || entry.agent.slice(0, 2)
 
   return (
@@ -28,7 +28,7 @@ function LogEntry({ entry, index, visible }) {
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateX(0)' : 'translateX(8px)',
         transition: `opacity 0.18s ${index * 0.04}s, transform 0.18s ${index * 0.04}s`,
-        borderBottom: '1px solid #1a2228',
+        borderBottom: '1px solid var(--border-subtle)',
         padding: '5px 8px',
       }}
     >
@@ -42,26 +42,26 @@ function LogEntry({ entry, index, visible }) {
         </span>
         {/* Agent badge */}
         <span style={{
-          fontSize: 8, color: '#57606a', background: '#1e252a',
+          fontSize: 8, color: 'var(--text-muted)', background: 'var(--bg-elevated)',
           padding: '0 3px', letterSpacing: '0.06em',
         }}>
           {agent}
         </span>
         {/* Mission */}
-        <span style={{ fontSize: 8, color: '#57606a', marginLeft: 'auto' }}>
+        <span style={{ fontSize: 8, color: 'var(--text-muted)', marginLeft: 'auto' }}>
           {entry.mission_id}
         </span>
         {/* Score */}
         {entry.score > 0 && (
-          <span style={{ fontSize: 8, color: color === '#e8a317' ? '#e8a317' : '#57606a' }}>
+          <span style={{ fontSize: 8, color: color === 'var(--accent)' ? 'var(--accent)' : 'var(--text-muted)' }}>
             {entry.score.toFixed(2)}
           </span>
         )}
       </div>
-      <div style={{ fontSize: 9, color: '#c9d1d9', lineHeight: 1.35 }}>
+      <div style={{ fontSize: 9, color: 'var(--text)', lineHeight: 1.35 }}>
         {entry.reason}
       </div>
-      <div style={{ fontSize: 8, color: '#57606a', marginTop: 1 }}>{entry.zulu}</div>
+      <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>{entry.zulu}</div>
     </div>
   )
 }
@@ -103,15 +103,15 @@ export default function NegotiationPanel() {
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-2 py-1 border-b shrink-0"
-           style={{ borderColor: '#2a3238', background: '#0f1316' }}>
-        <span style={{ fontSize: 9, color: '#57606a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+           style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
+        <span style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
           NEGOTIATION LOG
         </span>
         <button
           onClick={runNegotiation}
           disabled={recomputing}
           className="text-[9px] px-2 py-0.5 border tracking-widest uppercase"
-          style={{ color: '#e8a317', borderColor: '#e8a317', opacity: recomputing ? 0.5 : 1 }}
+          style={{ color: 'var(--accent)', borderColor: 'var(--accent)', opacity: recomputing ? 0.5 : 1 }}
         >
           {recomputing ? '...' : 'RUN'}
         </button>
@@ -119,23 +119,23 @@ export default function NegotiationPanel() {
 
       {/* Stats row */}
       {negLog.length > 0 && (
-        <div className="flex gap-3 px-2 py-1 border-b shrink-0" style={{ borderColor: '#1a2228' }}>
+        <div className="flex gap-3 px-2 py-1 border-b shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
           <div>
-            <div style={{ fontSize: 8, color: '#57606a', textTransform: 'uppercase' }}>AWARDED</div>
-            <div style={{ fontSize: 11, color: '#e8a317' }}>{awarded}</div>
+            <div style={{ fontSize: 8, color: 'var(--text-muted)', textTransform: 'uppercase' }}>AWARDED</div>
+            <div style={{ fontSize: 11, color: 'var(--accent)' }}>{awarded}</div>
           </div>
           <div>
-            <div style={{ fontSize: 8, color: '#57606a', textTransform: 'uppercase' }}>VETOED</div>
-            <div style={{ fontSize: 11, color: '#d64545' }}>{vetoed}</div>
+            <div style={{ fontSize: 8, color: 'var(--text-muted)', textTransform: 'uppercase' }}>VETOED</div>
+            <div style={{ fontSize: 11, color: 'var(--critical)' }}>{vetoed}</div>
           </div>
           <div>
-            <div style={{ fontSize: 8, color: '#57606a', textTransform: 'uppercase' }}>RESOLVED</div>
-            <div style={{ fontSize: 11, color: '#7eb8d4' }}>{resolved}</div>
+            <div style={{ fontSize: 8, color: 'var(--text-muted)', textTransform: 'uppercase' }}>RESOLVED</div>
+            <div style={{ fontSize: 11, color: 'var(--info)' }}>{resolved}</div>
           </div>
           {negMeta?.elapsed_ms && (
             <div style={{ marginLeft: 'auto' }}>
-              <div style={{ fontSize: 8, color: '#57606a', textTransform: 'uppercase' }}>TIME</div>
-              <div style={{ fontSize: 9, color: '#8fb56e' }}>{negMeta.elapsed_ms.toFixed(0)}ms</div>
+              <div style={{ fontSize: 8, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TIME</div>
+              <div style={{ fontSize: 9, color: 'var(--healthy)' }}>{negMeta.elapsed_ms.toFixed(0)}ms</div>
             </div>
           )}
         </div>
@@ -143,12 +143,12 @@ export default function NegotiationPanel() {
 
       {/* Robustness summary if available */}
       {negMeta?.robustness && (
-        <div className="flex gap-2 px-2 py-1 border-b shrink-0" style={{ borderColor: '#1a2228' }}>
+        <div className="flex gap-2 px-2 py-1 border-b shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
           {Object.entries(negMeta.robustness).map(([label, score]) => {
-            const color = score >= 80 ? '#8fb56e' : score >= 60 ? '#e8a317' : '#d64545'
+            const color = score >= 80 ? 'var(--healthy)' : score >= 60 ? 'var(--warning)' : 'var(--critical)'
             return (
               <div key={label} className="flex items-center gap-1">
-                <span style={{ fontSize: 8, color: '#57606a' }}>PLAN {label}</span>
+                <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>PLAN {label}</span>
                 <span style={{ fontSize: 10, color, fontWeight: 600 }}>{score?.toFixed(0)}%</span>
               </div>
             )
@@ -162,12 +162,12 @@ export default function NegotiationPanel() {
           <LogEntry key={i} entry={entry} index={i} visible={true} />
         ))}
         {negLog.length === 0 && (
-          <div style={{ fontSize: 10, color: '#57606a', padding: '10px 8px' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', padding: '10px 8px' }}>
             PRESS RUN TO START NEGOTIATION
           </div>
         )}
         {recomputing && negLog.length === 0 && (
-          <div className="replan-pulse" style={{ fontSize: 9, color: '#e8a317', padding: '8px' }}>
+          <div className="replan-pulse" style={{ fontSize: 9, color: 'var(--accent)', padding: '8px' }}>
             AGENTS NEGOTIATING...
           </div>
         )}
